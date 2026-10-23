@@ -45,15 +45,10 @@ export default function AppHeader({ onOpenMenu, themeMode, onThemeChange, langua
   return (
     <Header className="app-header">
       <div className="mobile-brand"><Button type="text" aria-label={t('Open navigation')} icon={<MenuOutlined />} onClick={onOpenMenu} /><span className="brand-mark">{'\u0b9c\u0bc6'}</span><strong>Jeyamohan Articles</strong></div>
-      <Input.Search
-        className="google-ai-search"
-        aria-label={t('Search Google AI')}
-        placeholder={t('Search Google AI')}
-        value={searchQuery}
-        onChange={(event) => setSearchQuery(event.target.value)}
-        onSearch={submitSearch}
-        enterButton={<><span className="google-ai-mark" aria-hidden="true">G</span>Google AI</>}
-      />
+      <form className="google-ai-search" role="search" aria-label={t('Search Google AI')} onSubmit={(event) => { event.preventDefault(); submitSearch(searchQuery) }}>
+        <Input className="google-ai-search-input" aria-label={t('Search Google AI')} placeholder={t('Search Google AI')} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+        <Button className="google-ai-search-submit" htmlType="submit"><span className="google-ai-mark" aria-hidden="true">G</span>{t('Google AI')}</Button>
+      </form>
       <div className="header-tools">
         <Typography.Text className="header-note">{t('Personal writing space')}</Typography.Text>
         <AccessibilitySettings themeMode={themeMode} onThemeChange={onThemeChange} />

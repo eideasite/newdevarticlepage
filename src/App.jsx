@@ -7,6 +7,8 @@ import { notifyAppError } from './services/errorNotifications.js'
 import QuickComposerPage from './pages/QuickComposerPage.jsx'
 const ArticleEditorPage = lazy(() => import('./pages/ArticleEditorPage.jsx'))
 const ArticlesManagementPage = lazy(() => import('./pages/ArticlesManagementPage.jsx'))
+const ArchivePage = lazy(() => import('./pages/ArchivePage.jsx'))
+const ExternalAiToolsPage = lazy(() => import('./pages/ExternalAiToolsPage.jsx'))
 const BookmarksPage = lazy(() => import('./pages/BookmarksPage.jsx'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'))
@@ -35,7 +37,7 @@ import { richTextToHtml } from './utils/richText.js'
 import './styles/global.css'
 import './styles/components.css'
 
-const APP_PAGES = new Set(['compose', 'profile', 'editor', 'seo', 'published', 'articles', 'bookmarks'])
+const APP_PAGES = new Set(['compose', 'profile', 'editor', 'seo', 'published', 'articles', 'bookmarks', 'archive', 'external-ai-tools'])
 const ARTICLE_CONTEXT_PAGES = new Set(['editor', 'seo', 'published'])
 
 function getInitialRoute() {
@@ -396,6 +398,11 @@ function AppContent({ themeMode, onThemeChange, language, onLanguageChange }) {
   }
   const handleArticleAction = (article, action) => {
     setActiveArticleId(article.id)
+    if (action === 'archive' || action === 'unarchive') {
+      updateArticleById(article.id, { archived: action === 'archive', archivedAt: action === 'archive' ? new Date().toISOString() : null })
+      message.success(t(action === 'archive' ? 'Article moved to Archive.' : 'Article restored from Archive.'))
+      return
+    }
     if (action === 'edit') navigateTo('editor', { articleId: article.id })
     if (action === 'seo') openSeo('articles', article.id)
     if (action === 'share' || action === 'publish') openShare(article)
@@ -526,9 +533,13 @@ function AppContent({ themeMode, onThemeChange, language, onLanguageChange }) {
   } else if (page === 'published') {
     pageContent = <PublishedPostPage article={activeArticle} onBack={() => goBack('articles')} onEdit={() => navigateTo('editor')} onShare={() => openShare()} onDownloadPdf={() => setPrintingArticle(activeArticle)} />
   } else if (page === 'articles') {
-    pageContent = <ArticlesManagementPage articles={workspace.articles} pinnedIds={pinnedArticleIds} onTogglePin={toggleArticlePin} onCreate={createArticle} onOpen={openArticle} onAction={handleArticleAction} />
+    pageContent = <ArticlesManagementPage articles={workspace.articles.filter((article) => !article.archived)} pinnedIds={pinnedArticleIds} onTogglePin={toggleArticlePin} onCreate={createArticle} onOpen={openArticle} onAction={handleArticleAction} />
   } else if (page === 'bookmarks') {
     pageContent = <BookmarksPage articles={workspace.articles} bookmarkedIds={bookmarkedArticleIds} shortcutIds={homeShortcutArticleIds} pinnedIds={pinnedArticleIds} onOpen={openArticle} onToggleBookmark={toggleArticleBookmark} onToggleShortcut={toggleHomeArticleShortcut} onTogglePin={toggleArticlePin} />
+  } else if (page === 'archive') {
+    pageContent = <ArchivePage articles={workspace.articles.filter((article) => article.archived)} onOpen={openArticle} onAction={handleArticleAction} pinnedIds={pinnedArticleIds} />
+  } else if (page === 'external-ai-tools') {
+    pageContent = <ExternalAiToolsPage />
   } else {
     pageContent = <NotFoundPage onHome={() => navigateTo('compose')} />
   }
