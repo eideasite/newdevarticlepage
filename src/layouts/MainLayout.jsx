@@ -1,29 +1,33 @@
 import { useState } from 'react'
-import { Alert, Button, Card, Drawer, Layout, Menu, Typography } from 'antd'
-import { BookOutlined, CloseOutlined, ExportOutlined, FileTextOutlined, ReloadOutlined, RobotOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons'
+import { Alert, Button, Drawer, Layout, Menu, Popover, Typography } from 'antd'
+import { InboxOutlined, BookOutlined, FileTextOutlined, InfoCircleOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import AppHeader from '../components/common/AppHeader.jsx'
 import LoadingState from '../components/common/LoadingState.jsx'
 import { useConnectivityStatus } from '../hooks/useConnectivityStatus.js'
 import { useLanguage } from '../context/LanguageContext.jsx'
 
 const { Content, Sider } = Layout
+function GeminiMark() {
+  return <svg className="ai-brand-mark ai-brand-gemini" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gemini-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f9ab00" /><stop offset=".32" stopColor="#ea4335" /><stop offset=".68" stopColor="#a142f4" /><stop offset="1" stopColor="#4285f4" /></linearGradient></defs><path fill="url(#gemini-gradient)" d="M24 2c3.7 12.1 9.9 18.3 22 22-12.1 3.7-18.3 9.9-22 22C20.3 33.9 14.1 27.7 2 24 14.1 20.3 20.3 14.1 24 2Z" /></svg>
+}
+function GoogleMark() {
+  return <span className="ai-brand-mark ai-brand-google" aria-hidden="true">G</span>
+}
 const navItems = [
   { key: 'compose', icon: <FileTextOutlined />, label: 'Write a Post' },
-  { key: 'write-article', icon: <FileTextOutlined />, label: 'Write an Article' },
-  { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
   { key: 'editor', icon: <FileTextOutlined />, label: 'Article Editor' },
   { key: 'seo', icon: <SettingOutlined />, label: 'SEO Settings' },
   { key: 'published', icon: <FileTextOutlined />, label: 'Published Post' },
   { key: 'articles', icon: <FileTextOutlined />, label: 'Articles Management' },
   { key: 'bookmarks', icon: <BookOutlined />, label: 'Bookmarks' },
-  { key: 'external-ai-tools', icon: <RobotOutlined />, label: 'External AI tools' },
+  { key: 'archive', icon: <InboxOutlined />, label: 'Archive' },
+  { key: 'external-ai-tools', icon: <GeminiMark />, label: 'External AI tools' },
 ]
 
 export default function MainLayout({ page, onNavigate, saveStatus, workspaceRecoveryState, onDownloadRecoveryCopy, themeMode, onThemeChange, language, onLanguageChange, profile, onLock, onSignOut, children }) {
   const { t } = useLanguage()
   const { online, showRestored, checkConnection, checkResult, networkEstimate, liveSpeedTest, refreshingEstimate, refreshNetworkEstimate } = useConnectivityStatus()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [aiSupportOpen, setAiSupportOpen] = useState(false)
   const estimateType = {
     'slow-2g': t('Very slow (slow 2G estimate)'),
     '2g': t('Slow (2G estimate)'),
@@ -40,33 +44,42 @@ export default function MainLayout({ page, onNavigate, saveStatus, workspaceReco
     { kind: 'downlink', label: `${t('Download speed')} ${liveSpeedTest.downloadMbps} Mbps` },
     { kind: 'latency', label: `${t('Latency to test server')} ${liveSpeedTest.latencyMs} ms` },
   ] : []
+  const networkStatusSummary = liveSpeedTest?.status === 'success'
+    ? t('Live speed test result')
+    : liveSpeedTest?.status === 'running'
+      ? t('Testing connection...')
+      : liveSpeedTest?.status === 'error'
+        ? t('Live speed test unavailable')
+        : estimateType || t('Network speed estimate unavailable')
+  const networkInfoContent = (
+    <div className="network-estimate-info">
+      {liveSpeedTest?.status === 'success'
+        ? <span className="network-estimate-metrics">{liveTestMetrics.map(({ kind, label }) => <span key={kind} className={`network-estimate-pill network-estimate-pill-${kind}`}>{label}</span>)}</span>
+        : networkDetails.length
+          ? <span className="network-estimate-metrics">{networkDetails.map(({ kind, label }) => <span key={kind} className={`network-estimate-pill network-estimate-pill-${kind}`}>{label}</span>)}</span>
+          : t('Browser network estimate unavailable.')}
+      <Typography.Text type="secondary">
+        {liveSpeedTest?.status === 'running'
+          ? t('Measuring latency and download speed from Cloudflare. No article text is sent.')
+          : liveSpeedTest?.status === 'success'
+            ? t('Measured from Cloudflare; a 2 MB sample was downloaded. No article text is sent.')
+            : t('Approximate browser estimate. Run a live test using Cloudflare; up to 2 MB is downloaded. No article text is sent.')}
+      </Typography.Text>
+    </div>
+  )
   const selectPage = (key) => {
-    if (key === 'external-ai-tools') setAiSupportOpen(true)
-    else onNavigate(key)
+    onNavigate(key)
     setMobileNavOpen(false)
   }
+  const profileBrand = <button type="button" className="sider-brand" aria-label={t('Open profile')} aria-current={page === 'profile' ? 'page' : undefined} onClick={() => { onNavigate('profile'); setMobileNavOpen(false) }}><span className="brand-mark">ஜெ</span><span className="sider-brand-copy"><strong>Jeyamohan</strong><Typography.Text type="secondary">{t('Articles')}</Typography.Text></span></button>
   const menu = <Menu mode="inline" selectedKeys={[page === 'published' ? 'articles' : page]} items={navItems.map((item) => ({ ...item, label: t(item.label) }))} onClick={({ key }) => selectPage(key)} />
   const saveMessage = saveStatus === 'conflict'
     ? t('Another tab changed this workspace. Saving here is paused to protect its newer data.')
     : saveStatus === 'error' ? t('Could not save') : saveStatus === 'saving' ? <LoadingState /> : t('Saved in this browser')
-  const renderSupportPanel = (headingId) => (
-    <Card className="external-ai-support-card" aria-labelledby={headingId}>
-      <div className="external-ai-support-heading-row">
-        <Typography.Title id={headingId} level={5}><RobotOutlined /> {t('External AI tools')}</Typography.Title>
-        <Button type="text" icon={<CloseOutlined />} aria-label={t('Close external AI tools panel')} onClick={() => setAiSupportOpen(false)} />
-      </div>
-      <Typography.Paragraph type="secondary">{t('These services operate separately from your writing workspace. This app does not send drafts or article content when you open a tool.')}</Typography.Paragraph>
-      <Button className="external-ai-support-link" block href="https://www.google.com/ai" target="_blank" rel="noopener noreferrer" icon={<ExportOutlined />}>
-        {t('Open Google AI in a new tab')}
-      </Button>
-      <Typography.Text className="external-ai-support-note" type="secondary">{t('Google controls its sign-in and availability. You can return to this tab at any time.')}</Typography.Text>
-    </Card>
-  )
-
   return (
     <Layout className="app-layout">
       <Sider className="app-sider" width={232} breakpoint="lg" collapsedWidth={0}>
-        <div className="sider-brand"><span className="brand-mark">ஜெ</span><div><strong>Jeyamohan</strong><Typography.Text type="secondary">{t('Articles')}</Typography.Text></div></div>
+        {profileBrand}
         {menu}
         <div className={`sider-note sider-note-${saveStatus}`} role="status"><span className={`storage-indicator ${saveStatus}`} />{saveMessage}</div>
       </Sider>
@@ -92,62 +105,27 @@ export default function MainLayout({ page, onNavigate, saveStatus, workspaceReco
             </div>}
           />}
           {online && <Alert
-            className={`connectivity-status network-estimate-status${isSlowConnection ? ' network-estimate-slow' : ''}`}
+            className={`connectivity-status network-estimate-status network-estimate-compact${isSlowConnection ? ' network-estimate-slow' : ''}`}
             banner
-            showIcon
+            showIcon={false}
             type={isSlowConnection ? 'warning' : 'info'}
             role="status"
-            message={liveSpeedTest?.status === 'success'
-              ? t('Live speed test result')
-              : liveSpeedTest?.status === 'running'
-                ? t('Testing connection...')
-                : liveSpeedTest?.status === 'error'
-                  ? t('Live speed test unavailable')
-                  : networkEstimate.supported
-                    ? isSlowConnection ? t('Your connection may be slow.') : t('Network status')
-                    : t('Network speed estimate unavailable')}
-            description={<div className="connectivity-action-row">
-              <span>
-                {liveSpeedTest?.status === 'running'
-                  ? t('Measuring latency and download speed from Cloudflare. No article text is sent.')
-                  : liveSpeedTest?.status === 'success'
-                    ? <>
-                      <span className="network-estimate-metrics">
-                        {liveTestMetrics.map(({ kind, label }) => <span key={kind} className={`network-estimate-pill network-estimate-pill-${kind}`}>{label}</span>)}
-                      </span>
-                      <small className="network-estimate-note">{t('Measured from Cloudflare; a 2 MB sample was downloaded. No article text is sent.')}</small>
-                    </>
-                    : liveSpeedTest?.status === 'error'
-                      ? <>
-                        {t(liveSpeedTest.message)}
-                        {networkDetails.length > 0 && <span className="network-estimate-metrics">
-                          {networkDetails.map(({ kind, label }) => <span key={kind} className={`network-estimate-pill network-estimate-pill-${kind}`}>{label}</span>)}
-                        </span>}
-                      </>
-                      : networkEstimate.supported
-                  ? <>
-                    {networkDetails.length ? <span className="network-estimate-metrics">
-                      {networkDetails.map(({ kind, label }) => <span key={kind} className={`network-estimate-pill network-estimate-pill-${kind}`}>
-                        {label}
-                      </span>)}
-                    </span> : t('Browser network estimate unavailable.')}
-                    <small className="network-estimate-note">{t('Approximate browser estimate. Run a live test using Cloudflare; up to 2 MB is downloaded. No article text is sent.')}</small>
-                  </>
-                  : <>
-                    {t('Browser network estimate unavailable.')}
-                    <small className="network-estimate-note">{t('Run a live test using Cloudflare; up to 2 MB is downloaded. No article text is sent.')}</small>
-                  </>}
-              </span>
-              <Button className="connectivity-check-button" icon={<ReloadOutlined />} loading={refreshingEstimate} disabled={refreshingEstimate} onClick={refreshNetworkEstimate}>{t(refreshingEstimate ? 'Testing connection...' : 'Run speed test')}</Button>
+            message={<div className="network-estimate-compact-row">
+              <div className="network-estimate-compact-copy">
+                <Typography.Text strong>{t('Network status')}</Typography.Text>
+                <Typography.Text type="secondary">{networkStatusSummary}</Typography.Text>
+                <Popover content={networkInfoContent} title={t('Network details')} trigger="click" placement="bottomLeft" overlayClassName="network-estimate-popover">
+                  <Button className="network-estimate-info-button" type="text" icon={<InfoCircleOutlined />} aria-label={t('Network details')} />
+                </Popover>
+              </div>
+              <Button className="connectivity-check-button" size="small" icon={<ReloadOutlined />} loading={refreshingEstimate} disabled={refreshingEstimate} onClick={refreshNetworkEstimate}>{t(refreshingEstimate ? 'Testing connection...' : 'Run speed test')}</Button>
             </div>}
           />}
           {online && showRestored && <Alert className="connectivity-status connectivity-restored" banner showIcon type="success" role="status" message={t('The browser reports that a connection is available again.')} description={t('This does not confirm that every online service is reachable.')} />}
-          {aiSupportOpen && <section className="external-ai-support-inline" aria-label={t('External AI tools panel')}>{renderSupportPanel('external-ai-support-mobile-heading')}</section>}
           {children}
         </Content>
       </Layout>
-      {aiSupportOpen && <aside className="external-ai-support-sidebar" aria-label={t('External AI tools panel')}>{renderSupportPanel('external-ai-support-desktop-heading')}</aside>}
-      <Drawer title="Jeyamohan Articles" open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} placement="left" width={280}>{menu}</Drawer>
+      <Drawer title="Jeyamohan Articles" open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} placement="left" width={280}>{profileBrand}{menu}</Drawer>
     </Layout>
   )
 }

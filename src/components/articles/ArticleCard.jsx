@@ -1,27 +1,31 @@
-import { Button, Space, Typography } from 'antd'
+import { Button, Space, Tooltip, Typography } from 'antd'
 import ArticleStatusTag from '../common/ArticleStatusTag.jsx'
 import ArticleActionsMenu from './ArticleActionsMenu.jsx'
-import { BookFilled, BookOutlined, PushpinFilled, PushpinOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
+import { BookFilled, BookOutlined, FileTextOutlined, PushpinFilled, PushpinOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 import { getArticleExcerpt, getArticleTitle } from '../../utils/article.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { useLanguage } from '../../context/LanguageContext.jsx'
 
 const { Title, Text, Paragraph } = Typography
 
-export default function ArticleCard({ article, onOpen, onAction, isBookmarked, isShortcut, isPinned, onToggleBookmark, onToggleShortcut, onTogglePin }) {
+export default function ArticleCard({ article, onOpen, onAction, isBookmarked, isShortcut, isPinned, onToggleBookmark, onToggleShortcut, onTogglePin, compact = false }) {
   const { t, language } = useLanguage()
+  const pinLabel = t(isPinned ? 'Unpin article' : 'Pin article')
+  const bookmarkLabel = t(isBookmarked ? 'Remove bookmark' : 'Bookmark article')
+  const shortcutLabel = t(isShortcut ? 'Remove home shortcut' : 'Add to Home Shortcuts')
+  const openLabel = t(article.status === 'published' ? 'View article' : 'Open article')
   return (
-    <article className="article-row">
+    <article className={`article-row${compact ? ' article-row-compact' : ''}`}>
       <Button type="text" className="article-row-main" aria-label={t('Open article')} onClick={() => onOpen(article)}>
         <div className="article-row-title"><Title level={5}>{getArticleTitle(article)}</Title><ArticleStatusTag status={article.status} /></div>
         <Paragraph ellipsis={{ rows: 2 }} type="secondary">{getArticleExcerpt(article.body) || t('Article body has not been added yet.')}</Paragraph>
         <Text className="article-row-date" type="secondary">{t('Updated:')} {formatDate(article.updatedAt, undefined, language === 'ta' ? 'ta-LK' : 'en-US')}</Text>
       </Button>
       <Space className="article-row-actions" wrap>
-        {onTogglePin && <Button type={isPinned ? 'primary' : 'default'} icon={isPinned ? <PushpinFilled /> : <PushpinOutlined />} aria-label={t(isPinned ? 'Unpin article' : 'Pin article')} aria-pressed={isPinned} title={t(isPinned ? 'Unpin article' : 'Pin article')} onClick={() => onTogglePin(article)}>{t(isPinned ? 'Pinned' : 'Pin')}</Button>}
-        {onToggleBookmark && <Button type={isBookmarked ? 'primary' : 'default'} icon={isBookmarked ? <BookFilled /> : <BookOutlined />} aria-label={t(isBookmarked ? 'Remove bookmark' : 'Bookmark article')} aria-pressed={isBookmarked} title={t(isBookmarked ? 'Remove bookmark' : 'Bookmark article')} onClick={() => onToggleBookmark(article)}>{t(isBookmarked ? 'Bookmarked' : 'Bookmark')}</Button>}
-        {onToggleShortcut && <Button type={isShortcut ? 'primary' : 'default'} icon={isShortcut ? <StarFilled /> : <StarOutlined />} aria-label={t(isShortcut ? 'Remove home shortcut' : 'Add to Home Shortcuts')} aria-pressed={isShortcut} title={t(isShortcut ? 'Remove home shortcut' : 'Add to Home Shortcuts')} onClick={() => onToggleShortcut(article)}>{t(isShortcut ? 'In shortcuts' : 'Add shortcut')}</Button>}
-        <Button onClick={() => onOpen(article)}>{t(article.status === 'published' ? 'View article' : 'Open article')}</Button>
+        {onTogglePin && <Tooltip title={pinLabel} placement="top"><Button className="article-action-button article-action-pin" type={isPinned ? 'primary' : 'default'} icon={isPinned ? <PushpinFilled /> : <PushpinOutlined />} aria-label={pinLabel} aria-pressed={isPinned} onClick={() => onTogglePin(article)}>{compact ? null : t(isPinned ? 'Pinned' : 'Pin')}</Button></Tooltip>}
+        {onToggleBookmark && <Tooltip title={bookmarkLabel} placement="top"><Button className="article-action-button article-action-bookmark" type={isBookmarked ? 'primary' : 'default'} icon={isBookmarked ? <BookFilled /> : <BookOutlined />} aria-label={bookmarkLabel} aria-pressed={isBookmarked} onClick={() => onToggleBookmark(article)}>{compact ? null : t(isBookmarked ? 'Bookmarked' : 'Bookmark')}</Button></Tooltip>}
+        {onToggleShortcut && <Tooltip title={shortcutLabel} placement="top"><Button className="article-action-button article-action-shortcut" type={isShortcut ? 'primary' : 'default'} icon={isShortcut ? <StarFilled /> : <StarOutlined />} aria-label={shortcutLabel} aria-pressed={isShortcut} onClick={() => onToggleShortcut(article)}>{compact ? null : t(isShortcut ? 'In shortcuts' : 'Add shortcut')}</Button></Tooltip>}
+        <Tooltip title={openLabel} placement="top"><Button className="article-action-button article-action-open" icon={compact ? <FileTextOutlined /> : null} aria-label={openLabel} onClick={() => onOpen(article)}>{compact ? null : openLabel}</Button></Tooltip>
         {onAction && <ArticleActionsMenu article={article} onAction={onAction} />}
       </Space>
     </article>

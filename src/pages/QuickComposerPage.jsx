@@ -118,11 +118,14 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
     .slice()
     .sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt))
   const visiblePosts = showAllPosts ? recentPosts : recentPosts.slice(0, 3)
-  const shortcutArticles = shortcutIds.map((id) => articles.find((article) => article.id === id)).filter(Boolean)
-  const missingShortcutCount = shortcutIds.length - shortcutArticles.length
+  const activeArticles = articles.filter((article) => !article.archived)
+  const shortcutArticles = shortcutIds.map((id) => articles.find((article) => article.id === id)).filter((article) => article && !article.archived)
+  const missingShortcutCount = shortcutIds.filter((id) => !articles.some((article) => article.id === id)).length
 
   return (
     <main className="quick-composer-page">
+      <div className="quick-composer-layout">
+      <div className="quick-composer-primary-column">
       <div className="quick-composer-panel">
         <div className="quick-composer">
           <ProfileAvatar profile={profile} className="quick-composer-avatar" />
@@ -152,28 +155,7 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
         </div>
       </div>
 
-      <HighlightsSection profile={profile} highlights={highlights} onSave={onSaveHighlights} />
-
-      <section className="home-article-section" aria-labelledby="home-shortcuts-heading">
-        <div className="home-article-section-heading">
-          <Typography.Title level={4} id="home-shortcuts-heading">{t('Home Shortcuts')}</Typography.Title>
-        </div>
-        {missingShortcutCount > 0 && <Typography.Text className="home-reference-warning" type="secondary">{t('Some shortcuts point to articles that are no longer available.')}</Typography.Text>}
-        <ArticleList
-          articles={shortcutArticles}
-          filter="all"
-          onOpen={onOpenArticle}
-          bookmarkedIds={bookmarkedIds}
-          shortcutIds={shortcutIds}
-          pinnedIds={pinnedIds}
-          onToggleBookmark={onToggleBookmark}
-          onToggleShortcut={onToggleShortcut}
-          onTogglePin={onTogglePin}
-          emptyDescription={t(shortcutIds.length ? 'Saved shortcuts are unavailable.' : 'No Home Shortcuts yet')}
-        />
-      </section>
-
-      <section className="home-article-section" aria-labelledby="home-recent-posts-heading">
+      <section className="home-article-section quick-composer-recent" aria-labelledby="home-recent-posts-heading">
         <div className="home-article-section-heading">
           <Typography.Title level={4} id="home-recent-posts-heading">{t('Recent Posts')}</Typography.Title>
           {recentPosts.length > 3 && <Button type="link" onClick={() => setShowAllPosts((current) => !current)}>{t(showAllPosts ? 'Show Less' : 'See More')}</Button>}
@@ -196,13 +178,37 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
           </div>
         )}
       </section>
-
-      <section className="home-article-section" aria-labelledby="home-articles-heading">
+      <section className="home-article-section quick-composer-articles" aria-labelledby="home-articles-heading">
         <div className="home-article-section-heading">
           <Typography.Title level={4} id="home-articles-heading">{t('Articles')}</Typography.Title>
         </div>
-        <ArticleList articles={articles} filter="all" onOpen={onOpenArticle} onAction={onArticleAction} bookmarkedIds={bookmarkedIds} shortcutIds={shortcutIds} pinnedIds={pinnedIds} onToggleBookmark={onToggleBookmark} onToggleShortcut={onToggleShortcut} onTogglePin={onTogglePin} />
+        <ArticleList articles={activeArticles} filter="all" onOpen={onOpenArticle} onAction={onArticleAction} bookmarkedIds={bookmarkedIds} shortcutIds={shortcutIds} pinnedIds={pinnedIds} onToggleBookmark={onToggleBookmark} onToggleShortcut={onToggleShortcut} onTogglePin={onTogglePin} compact />
       </section>
+      </div>
+      <div className="quick-composer-secondary-column">
+      <div className="quick-composer-highlights"><HighlightsSection profile={profile} highlights={highlights} onSave={onSaveHighlights} /></div>
+
+      <section className="home-article-section quick-composer-shortcuts" aria-labelledby="home-shortcuts-heading">
+        <div className="home-article-section-heading">
+          <Typography.Title level={4} id="home-shortcuts-heading">{t('Home Shortcuts')}</Typography.Title>
+        </div>
+        {missingShortcutCount > 0 && <Typography.Text className="home-reference-warning" type="secondary">{t('Some shortcuts point to articles that are no longer available.')}</Typography.Text>}
+        <ArticleList
+          articles={shortcutArticles}
+          filter="all"
+          onOpen={onOpenArticle}
+          bookmarkedIds={bookmarkedIds}
+          shortcutIds={shortcutIds}
+          pinnedIds={pinnedIds}
+          onToggleBookmark={onToggleBookmark}
+          onToggleShortcut={onToggleShortcut}
+          onTogglePin={onTogglePin}
+          emptyDescription={t(shortcutIds.length ? 'Saved shortcuts are unavailable.' : 'No Home Shortcuts yet')}
+        />
+      </section>
+
+      </div>
+      </div>
 
       <Modal
         className="create-post-modal"
