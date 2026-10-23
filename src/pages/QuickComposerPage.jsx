@@ -123,6 +123,7 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
 
   return (
     <main className="quick-composer-page">
+      <div className="quick-composer-layout">
       <div className="quick-composer-panel">
         <div className="quick-composer">
           <ProfileAvatar profile={profile} className="quick-composer-avatar" />
@@ -152,9 +153,9 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
         </div>
       </div>
 
-      <HighlightsSection profile={profile} highlights={highlights} onSave={onSaveHighlights} />
+      <div className="quick-composer-highlights"><HighlightsSection profile={profile} highlights={highlights} onSave={onSaveHighlights} /></div>
 
-      <section className="home-article-section" aria-labelledby="home-shortcuts-heading">
+      <section className="home-article-section quick-composer-shortcuts" aria-labelledby="home-shortcuts-heading">
         <div className="home-article-section-heading">
           <Typography.Title level={4} id="home-shortcuts-heading">{t('Home Shortcuts')}</Typography.Title>
         </div>
@@ -173,7 +174,7 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
         />
       </section>
 
-      <section className="home-article-section" aria-labelledby="home-recent-posts-heading">
+      <section className="home-article-section quick-composer-recent" aria-labelledby="home-recent-posts-heading">
         <div className="home-article-section-heading">
           <Typography.Title level={4} id="home-recent-posts-heading">{t('Recent Posts')}</Typography.Title>
           {recentPosts.length > 3 && <Button type="link" onClick={() => setShowAllPosts((current) => !current)}>{t(showAllPosts ? 'Show Less' : 'See More')}</Button>}
@@ -196,6 +197,7 @@ export default function QuickComposerPage({ profile, posts = [], articles = [], 
           </div>
         )}
       </section>
+      </div>
 
       <section className="home-article-section" aria-labelledby="home-articles-heading">
         <div className="home-article-section-heading">
